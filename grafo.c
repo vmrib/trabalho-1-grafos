@@ -24,42 +24,57 @@ grafo escreve_grafo(grafo g)
 int n_vertices(grafo g)
 {
 
-  return 0;
+  return agnnodes(g);
 }
 
 // -----------------------------------------------------------------------------
 int n_arestas(grafo g)
 {
 
-  return 0;
+  return agnedges(g);
 }
 
 // -----------------------------------------------------------------------------
 int grau(vertice v, grafo g)
 {
 
-  return 0;
+  return agcountuniqedges(g, v, TRUE, TRUE);
 }
 
 // -----------------------------------------------------------------------------
 int grau_maximo(grafo g)
 {
+  int max = grau(agfstnode(g), g);
 
-  return 0;
+  for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
+    if (grau(i, g) > max)
+      max = grau(i, g);
+
+  return max;
 }
 
 // -----------------------------------------------------------------------------
 int grau_minimo(grafo g)
 {
+  int min = grau(agfstnode(g), g);
 
-  return 0;
+  for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
+    if (grau(i, g) < min)
+      min = grau(i, g);
+
+  return min;
 }
 
 // -----------------------------------------------------------------------------
 int grau_medio(grafo g)
 {
+  int soma = 0;
+  int vertices = n_vertices(g);
 
-  return 0;
+  for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
+    soma += grau(i, g);
+
+  return soma / vertices;
 }
 
 // -----------------------------------------------------------------------------
@@ -72,8 +87,13 @@ int regular(grafo g)
 // -----------------------------------------------------------------------------
 int completo(grafo g)
 {
+  int grau_completo = n_vertices(g) - 1;
 
-  return 0;
+  for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
+    if (grau(i, g) != grau_completo)
+      return 0;
+
+  return 1;
 }
 
 // -----------------------------------------------------------------------------

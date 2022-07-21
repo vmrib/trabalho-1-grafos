@@ -35,6 +35,7 @@ CFLAGS  = -std=c99 \
 	  -Wvolatile-register-var \
 	  -Wwrite-strings
 
+LDFLAGS	= -lcgraph
 #------------------------------------------------------------------------------
 .PHONY : all clean test
 
@@ -42,7 +43,7 @@ CFLAGS  = -std=c99 \
 all : teste
 
 teste : teste.o grafo.o
-	$(CC) $(CFLAGS) -o $@ $^ -lcgraph
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 #------------------------------------------------------------------------------
 clean :
@@ -50,3 +51,7 @@ clean :
 
 test: all
 	./teste < inet.dot
+
+test_inet: tests/tests_inet.o grafo.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
