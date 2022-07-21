@@ -37,21 +37,21 @@ CFLAGS  = -std=c99 \
 
 LDFLAGS	= -lcgraph
 #------------------------------------------------------------------------------
-.PHONY : all clean test
+.PHONY : all clean test inet
 
 #------------------------------------------------------------------------------
-all : teste
+all : inet
 
 teste : teste.o grafo.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 #------------------------------------------------------------------------------
 clean :
-	$(RM) teste *.o
+	$(RM) teste test_inet *.o
 
 test: all
 	./teste < inet.dot
 
-test_inet: tests/tests_inet.o grafo.o
+inet : tests_inet.o grafo.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 

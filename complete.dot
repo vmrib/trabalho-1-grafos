@@ -1,0 +1,10 @@
+strict graph completo {
+	fontname="Helvetica,Arial,sans-serif"
+	node [fontname="Helvetica,Arial,sans-serif"]
+	edge [fontname="Helvetica,Arial,sans-serif"]
+	ERC -- { ALC WH1 HO1 IH1 };
+	ALC -- { ERC WH1 HO1 IH1 };
+	WH1 -- { ERC ALC HO1 IH1 };
+	HO1 -- { ERC ALC WH1 IH1 };
+	IH1 -- { ERC ALC WH1 HO1 };
+}

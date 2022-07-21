@@ -13,7 +13,7 @@ strict graph ip_map {
 	MT -- DR;
 	HO1 -- CB -- IH1 -- IHC;
 	HO1 -- HV;
-	{IHP IW IH1 IH2 IH4 } -- {IHP IW IH1 IH2 IH4 };
+	//{IHP IW IH1 IH2 IH4 } -- {IHP IW IH1 IH2 IH4 };
 	{IH4 IH2} -- {MLM HV};
 	HO1 -- HO3;
 	HO3 -- IH1;
