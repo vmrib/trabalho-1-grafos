@@ -249,10 +249,12 @@ int colorir(grafo g, vertice v)
   for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v))
   {
     if (V_color(a->node) != NONE)
+    {
       if (candidato == NONE)
-        candidato = V_color(a->node);
-      else
+        candidato = V_color(a->node) == RED ? BLUE : RED;
+      else if (candidato == V_color(a->node))
         return 0;
+    }
   }
 
   V_color(v) = candidato != NONE ? candidato : RED;
@@ -278,6 +280,9 @@ int v_triangulos(grafo g, vertice v)
   {
     for (aresta b = agfstedge(g, a->node); b != NULL; b = agnxtedge(g, b, a->node))
     {
+      if (a == b)
+        continue;
+
       for (aresta c = agfstedge(g, b->node); c != NULL; c = agnxtedge(g, c, b->node))
       {
         if (c == b)

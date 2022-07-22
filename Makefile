@@ -37,10 +37,10 @@ CFLAGS  = -std=c99 \
 
 LDFLAGS	= -lcgraph
 #------------------------------------------------------------------------------
-.PHONY : all clean test inet
+.PHONY : all clean test inet compl
 
 #------------------------------------------------------------------------------
-all : inet
+all : compl
 
 teste : teste.o grafo.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
@@ -55,3 +55,5 @@ test: all
 inet : tests_inet.o grafo.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
+compl: test_completo.o grafo.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
