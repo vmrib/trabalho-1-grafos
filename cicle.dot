@@ -1,0 +1,5 @@
+strict graph cicle {
+    A -- B;
+    B -- C;
+    C -- A;
+}

@@ -78,8 +78,13 @@ int grau_medio(grafo g)
 // -----------------------------------------------------------------------------
 int regular(grafo g)
 {
+  int sample = grau(agfstnode(g), g);
 
-  return 0;
+  for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
+    if (grau(i, g) != sample)
+      return 0;
+
+  return 1;
 }
 
 // -----------------------------------------------------------------------------
@@ -97,7 +102,6 @@ int completo(grafo g)
 // -----------------------------------------------------------------------------
 int conexo(grafo g)
 {
-
   return 0;
 }
 
