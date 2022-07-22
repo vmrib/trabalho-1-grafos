@@ -7,7 +7,8 @@
 #define V_done(v) (((meuvertice_t *)AGDATA(v))->done)
 #define V_color(v) (((meuvertice_t *)AGDATA(v))->color)
 
-typedef enum cor {
+typedef enum cor
+{
   NONE,
   RED,
   BLUE,
@@ -131,7 +132,7 @@ int conexo(grafo g)
 {
   for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
     V_done(i) = 0;
-    
+
   return contaminar(g, agfstnode(g)) == n_vertices(g);
 }
 
@@ -139,16 +140,24 @@ int conexo(grafo g)
 int bipartido(grafo g)
 {
   for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
+  {
     V_color(i) = NONE;
-    
-  return 0;
+    V_done(i) = 0;
+  }
+
+  for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
+  {
+    if (colorir(g, i) == 0)
+      return 0;
+  }
+
+  return 1;
 }
 
 // -----------------------------------------------------------------------------
 int n_triangulos(grafo g)
 {
-  
-  
+
   return 0;
 }
 
@@ -213,17 +222,44 @@ grafo complemento(grafo g)
 }
 
 int contaminar(grafo g, vertice v)
+{
+  int contaminados = 1;
+  V_done(v) = 1;
+
+  for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v))
   {
-    int contaminados = 1;
-    V_done(v) = 1;
-    
-    for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v))
-    {
-      if (V_done(a->node))
-        continue;
-      
-      contaminados += contaminar(g, a->node);
-    }
-    
-    return contaminados;
+    if (V_done(a->node))
+      continue;
+
+    contaminados += contaminar(g, a->node);
   }
+
+  return contaminados;
+}
+
+int colorir(grafo g, vertice v)
+{
+  cor candidato = NONE;
+  for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v))
+  {
+    if (V_color(a->node) != NONE)
+      if (candidato == NONE)
+        candidato = V_color(a->node);
+      else
+        return 0;
+  }
+
+  V_color(v) = candidato != NONE ? candidato : RED;
+  V_done(v) = 1;
+
+  for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v))
+  {
+    if (V_done(a->node))
+      continue;
+
+    if (colorir(g, a->node) == 0)
+      return 0;
+  }
+
+  return 1;
+}
