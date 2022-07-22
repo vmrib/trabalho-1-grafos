@@ -1,14 +1,34 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "grafo.h"
+#include "debug.h"
+
+#define V_index(v) (((meuvertice_t *)AGDATA(v))->index)
+#define V_done(v) (((meuvertice_t *)AGDATA(v))->done)
+
+typedef struct meuvertice_t
+{
+  Agrec_t h;
+  int index;
+  int done;
+} meuvertice_t;
+
+typedef Agedge_t *aresta;
 
 //------------------------------------------------------------------------------
 grafo le_grafo(void)
 {
-  return agread(stdin, NULL);
+  grafo g = agread(stdin, NULL);
+
+  if (g)
+    aginit(g, AGNODE, "meuvertice_t", sizeof(meuvertice_t), TRUE);
+
+  return g;
 }
 //------------------------------------------------------------------------------
 void destroi_grafo(grafo g)
 {
+  agclean(g, AGNODE, "meuvertice_t");
   agclose(g);
 }
 //------------------------------------------------------------------------------
@@ -21,21 +41,18 @@ grafo escreve_grafo(grafo g)
 // -----------------------------------------------------------------------------
 int n_vertices(grafo g)
 {
-
   return agnnodes(g);
 }
 
 // -----------------------------------------------------------------------------
 int n_arestas(grafo g)
 {
-
   return agnedges(g);
 }
 
 // -----------------------------------------------------------------------------
 int grau(vertice v, grafo g)
 {
-
   return agcountuniqedges(g, v, TRUE, TRUE);
 }
 
@@ -122,13 +139,59 @@ int n_triangulos(grafo g)
 // -----------------------------------------------------------------------------
 int **matriz_adjacencia(grafo g)
 {
+  int n_vert = n_vertices(g);
+  int **matriz;
 
-  return NULL;
+  matriz = malloc(n_vert * sizeof(int *));
+  for (size_t i = 0; i < n_vert; i++)
+  {
+    *matriz = malloc(n_vert * sizeof(int));
+    memset(*matriz, 0, n_vert * sizeof(int));
+  }
+
+  int index = 0;
+  for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
+  {
+    V_index(i) = index;
+    index++;
+  }
+
+  for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
+  {
+    for (aresta a = agfstedge(g, i); a != NULL; a = agnxtedge(g, a, i))
+    {
+      matriz[V_index(i)][V_index(a->node)] = 1;
+      matriz[V_index(a->node)][V_index(i)] = 1;
+    }
+  }
+
+  return matriz;
 }
 
 // -----------------------------------------------------------------------------
 grafo complemento(grafo g)
 {
+  grafo c = agopen("Complemento", Agstrictundirected, NULL);
+  if (!c)
+    return NULL;
 
-  return NULL;
+  for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
+  {
+    agnode(c, agnameof(i), TRUE);
+  }
+
+  for (vertice i = agfstnode(c); i != NULL; i = agnxtnode(c, i))
+    for (vertice j = agfstnode(c); j != NULL; j = agnxtnode(c, j))
+    {
+      if (i == j)
+        continue;
+
+      vertice u = agnode(g, agnameof(i), FALSE);
+      vertice v = agnode(g, agnameof(j), FALSE);
+
+      if (!agedge(g, u, v, NULL, FALSE))
+        agedge(c, j, i, NULL, TRUE);
+    }
+
+  return c;
 }

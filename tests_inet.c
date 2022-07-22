@@ -10,11 +10,11 @@ void test_quantities(grafo g)
 
 void test_graus(grafo g)
 {
-    grafo m_5 = agnode(g, "HO1", FALSE);
-    grafo m_4 = agnode(g, "IH1", FALSE);
-    grafo m_3 = agnode(g, "MV", FALSE);
-    grafo m_2 = agnode(g, "WH1", FALSE);
-    grafo m_1 = agnode(g, "AN", FALSE);
+    vertice m_5 = agnode(g, "HO1", FALSE);
+    vertice m_4 = agnode(g, "IH1", FALSE);
+    vertice m_3 = agnode(g, "MV", FALSE);
+    vertice m_2 = agnode(g, "WH1", FALSE);
+    vertice m_1 = agnode(g, "AN", FALSE);
 
     assert(grau(m_5, g) == 5);
     assert(grau(m_4, g) == 4);
@@ -31,6 +31,11 @@ test_completo(grafo g)
     assert(completo(g) == 0);
 }
 
+test_complemento(grafo g)
+{
+    escreve_grafo(complemento(g));
+}
+
 int main(int argc, char const *argv[])
 {
     FILE *f = fopen("inet.dot", "r");
@@ -42,6 +47,8 @@ int main(int argc, char const *argv[])
     test_quantities(inet);
     test_graus(inet);
     test_completo(inet);
+
+    test_complemento(inet);
 
     destroi_grafo(inet);
 
