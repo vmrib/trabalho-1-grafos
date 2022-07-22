@@ -25,6 +25,8 @@ typedef struct meuvertice_t
 typedef Agedge_t *aresta;
 
 int contaminar(grafo g, vertice v);
+int colorir(grafo g, vertice v);
+int v_triangulos(grafo g, vertice v);
 
 //------------------------------------------------------------------------------
 grafo le_grafo(void)
@@ -157,8 +159,12 @@ int bipartido(grafo g)
 // -----------------------------------------------------------------------------
 int n_triangulos(grafo g)
 {
+  int triangulos = 0;
 
-  return 0;
+  for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
+    triangulos += v_triangulos(g, i);
+
+  return triangulos;
 }
 
 // -----------------------------------------------------------------------------
@@ -262,4 +268,33 @@ int colorir(grafo g, vertice v)
   }
 
   return 1;
+}
+
+int v_triangulos(grafo g, vertice v)
+{
+  int triangulos = 0;
+
+  for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v))
+  {
+    for (aresta b = agfstedge(g, a->node); b != NULL; b = agnxtedge(g, b, a->node))
+    {
+      for (aresta c = agfstedge(g, b->node); c != NULL; c = agnxtedge(g, c, b->node))
+      {
+        if (c == b)
+          continue;
+
+        if (V_done(a) && V_done(b) && V_done(c))
+          continue;
+
+        if (ageqedge(a, c))
+          triangulos++;
+
+        V_done(c) = 1;
+      }
+      V_done(b) = 1;
+    }
+    V_done(a) = 1;
+  }
+
+  return triangulos;
 }
