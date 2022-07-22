@@ -5,15 +5,25 @@
 
 #define V_index(v) (((meuvertice_t *)AGDATA(v))->index)
 #define V_done(v) (((meuvertice_t *)AGDATA(v))->done)
+#define V_color(v) (((meuvertice_t *)AGDATA(v))->color)
+
+typedef enum cor {
+  NONE,
+  RED,
+  BLUE,
+} cor;
 
 typedef struct meuvertice_t
 {
   Agrec_t h;
   int index;
   int done;
+  cor color;
 } meuvertice_t;
 
 typedef Agedge_t *aresta;
+
+int contaminar(grafo g, vertice v);
 
 //------------------------------------------------------------------------------
 grafo le_grafo(void)
@@ -119,20 +129,26 @@ int completo(grafo g)
 // -----------------------------------------------------------------------------
 int conexo(grafo g)
 {
-  return 0;
+  for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
+    V_done(i) = 0;
+    
+  return contaminar(g, agfstnode(g)) == n_vertices(g);
 }
 
 // -----------------------------------------------------------------------------
 int bipartido(grafo g)
 {
-
+  for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
+    V_color(i) = NONE;
+    
   return 0;
 }
 
 // -----------------------------------------------------------------------------
 int n_triangulos(grafo g)
 {
-
+  
+  
   return 0;
 }
 
@@ -195,3 +211,19 @@ grafo complemento(grafo g)
 
   return c;
 }
+
+int contaminar(grafo g, vertice v)
+  {
+    int contaminados = 1;
+    V_done(v) = 1;
+    
+    for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v))
+    {
+      if (V_done(a->node))
+        continue;
+      
+      contaminados += contaminar(g, a->node);
+    }
+    
+    return contaminados;
+  }
