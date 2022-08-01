@@ -33,7 +33,7 @@ CFLAGS  = -std=c99 \
 	  -Wundef \
 	  -Wunsafe-loop-optimizations \
 	  -Wvolatile-register-var \
-	  -Wwrite-strings
+	  -Wwrite-strings -g
 
 LDFLAGS	= -lcgraph
 #------------------------------------------------------------------------------

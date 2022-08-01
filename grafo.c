@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "grafo.h"
-#include "debug.h"
 
+//------------------------------------------------------------------------------
+// Macros para acesso aos atributos internos dos vértices definidos pelo usuario
+// Mais informações em https://graphviz.org/pdf/cgraph.pdf, páginas 9-10
 #define V_index(v) (((meuvertice_t *)AGDATA(v))->index)
 #define V_done(v) (((meuvertice_t *)AGDATA(v))->done)
 #define V_color(v) (((meuvertice_t *)AGDATA(v))->color)
 
+//------------------------------------------------------------------------------
 typedef enum cor
 {
   NONE,
@@ -14,26 +17,41 @@ typedef enum cor
   BLUE,
 } cor;
 
+// Atributos intenos de um vértice
 typedef struct meuvertice_t
 {
-  Agrec_t h;
-  int index;
-  int done;
-  cor color;
+  Agrec_t h; // Exigido pela biblioteca
+  int done;  // Flag para sinalizar se já passamos pelo vértice
+  union
+  {
+    int index; // Cada vértice pode ser indexado por um índice ou
+    cor color; // uma cor
+  };
 } meuvertice_t;
 
 typedef Agedge_t *aresta;
 
+//------------------------------------------------------------------------------
+// "contamina" todos os vizinhos e descedentes dos vizinhos de v. Retorna o
+// total de contaminados. Utilizado para saber se um grafo é conexo. Se não for,
+// definitivamente não será possível contaminar todos os vértices a partir de v.
 int contaminar(grafo g, vertice v);
+
+// Tenta colorir todos os vértices descendentes de um vértice inicial v.
+// Utilizado para testar se o grafo é bipartido.
+// Retorna 0 caso não seja possível colorir o grafo utilizando 2 cores.
 int colorir(grafo g, vertice v);
-int v_triangulos(grafo g, vertice v);
+
+// Seja M uma matriz de nxn dimensões, retorna M^3 em M. Utilizado para contar
+// triangulos de um grafo.
+void matriz_cubo(int **m, int n);
 
 //------------------------------------------------------------------------------
 grafo le_grafo(void)
 {
   grafo g = agread(stdin, NULL);
 
-  if (g)
+  if (g) // atribui atributos internos para todos os vértices de g
     aginit(g, AGNODE, "meuvertice_t", sizeof(meuvertice_t), TRUE);
 
   return g;
@@ -41,7 +59,7 @@ grafo le_grafo(void)
 //------------------------------------------------------------------------------
 void destroi_grafo(grafo g)
 {
-  agclean(g, AGNODE, "meuvertice_t");
+  agclean(g, AGNODE, "meuvertice_t"); // libera da memória atributos internos
   agclose(g);
 }
 //------------------------------------------------------------------------------
@@ -120,6 +138,8 @@ int regular(grafo g)
 // -----------------------------------------------------------------------------
 int completo(grafo g)
 {
+  // Num grafo completo, o grau de um vértice é igual ao número de vértices do
+  // grafo - 1.
   int grau_completo = n_vertices(g) - 1;
 
   for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
@@ -132,21 +152,28 @@ int completo(grafo g)
 // -----------------------------------------------------------------------------
 int conexo(grafo g)
 {
+  // todos os vértices começam "descontaminados"
   for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
     V_done(i) = 0;
 
+  // se for possível contaminar todos os vértices do grafo a partir de um vértice
+  // inicial v, o grafo é conexo.
   return contaminar(g, agfstnode(g)) == n_vertices(g);
 }
 
 // -----------------------------------------------------------------------------
 int bipartido(grafo g)
 {
+  // Todos os vértices são inicialemnte sem cor.
   for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
   {
     V_color(i) = NONE;
     V_done(i) = 0;
   }
 
+  // como colorimos o grafo a partir de um vértice inicial qualquer, se o grafo
+  // for desconexo não será possível colorir todos os vértices. Por isso,
+  // iteramos sobre todos os vértices para garantir que todos serão coloridos.
   for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
   {
     if (colorir(g, i) == 0)
@@ -159,12 +186,22 @@ int bipartido(grafo g)
 // -----------------------------------------------------------------------------
 int n_triangulos(grafo g)
 {
-  int triangulos = 0;
+  // algoritmo extraído de
+  // https://www.geeksforgeeks.org/number-of-triangles-in-a-undirected-graph
+  int **m = matriz_adjacencia(g);
+  int n = n_vertices(g);
 
-  for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
-    triangulos += v_triangulos(g, i);
+  matriz_cubo(m, n);
 
-  return triangulos;
+  int traco = 0;
+  for (int i = 0; i < n; i++)
+    traco += m[i][i];
+
+  for (int i = 0; i < n; i++)
+    free(m[i]);
+  free(m);
+
+  return traco / 6;
 }
 
 // -----------------------------------------------------------------------------
@@ -173,13 +210,15 @@ int **matriz_adjacencia(grafo g)
   int n_vert = n_vertices(g);
   int **matriz;
 
+  // Alocação da matriz
   matriz = malloc(n_vert * sizeof(int *));
-  for (size_t i = 0; i < n_vert; i++)
+  for (int i = 0; i < n_vert; i++)
   {
-    *matriz = malloc(n_vert * sizeof(int));
-    memset(*matriz, 0, n_vert * sizeof(int));
+    matriz[i] = malloc(n_vert * sizeof(int));
+    memset(matriz[i], 0, n_vert * sizeof(int));
   }
 
+  // Atribuição de um índice para cada vértice, na ordem de agnxtnode()
   int index = 0;
   for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
   {
@@ -206,20 +245,23 @@ grafo complemento(grafo g)
   if (!c)
     return NULL;
 
+  // complemento possui todos os vértices do original, com o mesmo nome
   for (vertice i = agfstnode(g); i != NULL; i = agnxtnode(g, i))
-  {
     agnode(c, agnameof(i), TRUE);
-  }
 
   for (vertice i = agfstnode(c); i != NULL; i = agnxtnode(c, i))
     for (vertice j = agfstnode(c); j != NULL; j = agnxtnode(c, j))
     {
-      if (i == j)
+      if (i == j) // Aresta do tipo {u, u} não existe
         continue;
 
+      // Dados dois vértices i e j do complemento, obtemos os vértices
+      // equivalentes u e v do grafo oiginal.
       vertice u = agnode(g, agnameof(i), FALSE);
       vertice v = agnode(g, agnameof(j), FALSE);
 
+      // se não existir aresta entre os vértices u e v do grafo original,
+      // inserimos ela no complemento.
       if (!agedge(g, u, v, NULL, FALSE))
         agedge(c, j, i, NULL, TRUE);
     }
@@ -227,14 +269,18 @@ grafo complemento(grafo g)
   return c;
 }
 
+// -----------------------------------------------------------------------------
+// "contamina" todos os vizinhos e descedentes dos vizinhos de v. Retorna o
+// total de contaminados. Utilizado para saber se um grafo é conexo. Se não for,
+// definitivamente não será possível contaminar todos os vértices a partir de v.
 int contaminar(grafo g, vertice v)
 {
-  int contaminados = 1;
+  int contaminados = 1; // vértice v inicial contaminado
   V_done(v) = 1;
 
   for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v))
   {
-    if (V_done(a->node))
+    if (V_done(a->node)) // já contaminamos o vértice anteriormente
       continue;
 
     contaminados += contaminar(g, a->node);
@@ -243,26 +289,41 @@ int contaminar(grafo g, vertice v)
   return contaminados;
 }
 
+// -----------------------------------------------------------------------------
+// Tenta colorir todos os vértices descendentes de um vértice inicial v.
+// Utilizado para testar se o grafo é bipartido.
+// Retorna 0 caso não seja possível colorir o grafo utilizando 2 cores.
 int colorir(grafo g, vertice v)
 {
-  cor candidato = NONE;
+  // cor "candidata" ao vértice v é inicialmente nula
+  cor candidata = NONE;
+
+  // Checagem para verificar se vizinhos já não possuem alguma cor
   for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v))
   {
-    if (V_color(a->node) != NONE)
+    if (V_color(a->node) != NONE) // Vizinho já possui cor
     {
-      if (candidato == NONE)
-        candidato = V_color(a->node) == RED ? BLUE : RED;
-      else if (candidato == V_color(a->node))
+      // Se não temos cor definida, então somos coloridos com a cor
+      // contrária ao vizinho
+      if (candidata == NONE)
+        candidata = V_color(a->node) == RED ? BLUE : RED;
+
+      // Caso exista um vizinho com a mesma cor que a nossa, então é
+      // Impossível colorir com 2 cores.
+      else if (candidata == V_color(a->node))
         return 0;
     }
   }
 
-  V_color(v) = candidato != NONE ? candidato : RED;
+  // Se nenhum vizinho tem cor definida, arbitrariamente definimos nossa
+  // cor como vermelho.
+  V_color(v) = candidata != NONE ? candidata : RED;
   V_done(v) = 1;
 
+  // Colorimos os vizinhos
   for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v))
   {
-    if (V_done(a->node))
+    if (V_done(a->node)) // Vizinho já foi colorido previamente
       continue;
 
     if (colorir(g, a->node) == 0)
@@ -272,34 +333,45 @@ int colorir(grafo g, vertice v)
   return 1;
 }
 
-int v_triangulos(grafo g, vertice v)
+// -----------------------------------------------------------------------------
+// Seja M uma matriz de nxn dimensões, retorna M^3 em M. Utilizado para contar
+// triangulos de um grafo.
+void matriz_cubo(int **m, int n)
 {
-  int triangulos = 0;
+  int aux1[n][n], aux2[n][n];
 
-  for (aresta a = agfstedge(g, v); a != NULL; a = agnxtedge(g, a, v))
+  // aux1 = m * m;
+  for (int i = 0; i < n; i++)
   {
-    for (aresta b = agfstedge(g, a->node); b != NULL; b = agnxtedge(g, b, a->node))
+    for (int j = 0; j < n; j++)
     {
-      if (a == b)
-        continue;
-
-      for (aresta c = agfstedge(g, b->node); c != NULL; c = agnxtedge(g, c, b->node))
+      aux1[i][j] = 0;
+      for (int k = 0; k < n; k++)
       {
-        if (c == b)
-          continue;
-
-        if (V_done(a) && V_done(b) && V_done(c))
-          continue;
-
-        if (ageqedge(a, c))
-          triangulos++;
-
-        V_done(c) = 1;
+        aux1[i][j] += (m[i][k] * m[k][j]);
       }
-      V_done(b) = 1;
     }
-    V_done(a) = 1;
   }
 
-  return triangulos;
+  // aux2 = m * aux1
+  for (int i = 0; i < n; i++)
+  {
+    for (int j = 0; j < n; j++)
+    {
+      aux2[i][j] = 0;
+      for (int k = 0; k < n; k++)
+      {
+        aux2[i][j] += m[i][k] * aux1[k][j];
+      }
+    }
+  }
+
+  // m = aux2 = m^3
+  for (int i = 0; i < n; i++)
+  {
+    for (int j = 0; j < n; j++)
+    {
+      m[i][j] = aux2[i][j];
+    }
+  }
 }
